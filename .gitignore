@@ -1,0 +1,41 @@
+# Модели и исходные записи не должны попадать в Git.
+/models/*
+!/models/.gitkeep
+/inbox/*
+!/inbox/.gitkeep
+/working/*
+!/working/.gitkeep
+/archive/*
+!/archive/.gitkeep
+
+# Сборки и сторонние инструменты можно восстановить установкой.
+/app/
+/tools/
+
+# Артефакты .NET и локальные настройки Visual Studio.
+**/bin/
+**/obj/
+**/.vs/
+*.user
+*.suo
+
+# Готовые тяжёлые сборки приложения хранятся локально.
+/releases/**/*.exe
+/releases/**/*.dll
+/releases/**/*.pdb
+
+# Временные аудиоформаты.
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+*.ogg
+*.opus
+*.wma
+*.webm
+*.mp4
+
+# Результаты транскрибации не являются исходным кодом проекта.
+/output/*
+!/output/.gitkeep
