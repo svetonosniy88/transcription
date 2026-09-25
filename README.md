@@ -1,122 +1,63 @@
-# Transcription
+![WhisperMd — локальная транскрибация в Markdown](assets/whispermd-banner.svg)
 
-Единый локальный проект для разработки приложения транскрибации и расшифровки записей через `whisper.cpp`. Внутри находятся исходники Windows-приложения, модель, обе сборки движка, FFmpeg, Vulkan SDK, рабочие данные и готовый автономный релиз.
+# WhisperMd
 
-## Быстрый запуск
+Локальный транскрибатор аудио и видео для Windows. Превращает записи лекций, встреч и интервью в Markdown-заметки с помощью whisper.cpp.
 
-Запустить `Запустить WhisperMd.cmd` из корня проекта либо напрямую:
+**Версия 1.0.0 · Windows x64 · WPF / .NET 8 · обработка на устройстве**
 
-```text
-releases\WhisperMd-v0.0.1\WhisperMd.exe
-```
+## Скачать и начать работу
 
-Legacy WinForms позволяет обработать один файл и сохраняется как рабочая точка возврата. Новый WPF-интерфейс v1 поддерживает очередь, группы, progress/cancellation, Markdown-библиотеку, историю и постоянные настройки.
+1. Скачайте [WhisperMd-Setup-1.0.0.exe из релиза v1.0.0](https://github.com/svetonosniy88/transcription/releases/tag/v1.0.0) и установите приложение. Установщик включает модель, движок транскрибации, FFmpeg и .NET runtime.
+2. Добавьте аудио- или видеофайлы кнопкой выбора либо перетащите их в окно. При необходимости измените порядок записей.
+3. Выберите способ формирования заметок: отдельная заметка для каждой записи, одна общая заметка или пользовательские группы. Можно добавить контекстную подсказку для распознавания.
+4. Запустите обработку. Готовые Markdown-файлы по умолчанию сохраняются в `Документы\WhisperMd`; папку можно изменить в настройках. Созданные заметки доступны через историю приложения.
 
-## Поток работы
+Установщик рассчитан на установку для текущего пользователя и не требует исходного репозитория. Исходные записи приложение автоматически не удаляет.
 
-1. Скачать файл из Telegram в `inbox` или выбрать его в оконном приложении.
-2. Запустить `WhisperMd` либо `transcribe.ps1`, передав путь к записи.
-3. Проверить результаты в `output`.
-4. Перенести полезный текст в Obsidian.
-5. После проверки удалить запись либо перенести её в `archive`.
+**SHA-256 установщика:** `D57D6EAD817746E9E4BA7D4562830BE18E2AC916078F44C659DE9F46174FC331`
 
-## Папки
+## Возможности
 
-- `src/WhisperMd.App` — новый WPF-интерфейс v1 (очередь, группы и application-layer исполнения).
-- `src/WhisperMd` — legacy Windows Forms-приложение, сохраняемое как рабочая точка возврата.
-- `releases` — локальные готовые сборки приложения.
-- `app/whisper.cpp` — исходники и собранные CPU/Vulkan-версии `whisper.cpp`.
-- `models` — мультиязычная модель Whisper `small` (`ggml-small.bin`).
-- `inbox` — новые записи.
-- `working` — временные WAV 16 кГц mono.
-- `output` — расшифровки TXT, SRT и JSON.
-- `archive` — проверенные исходные записи, если их нужно сохранить.
-- `tools` — локальные FFmpeg и Vulkan SDK.
-- `scripts` — проверка среды, сборка и запуск GUI.
-- `docs` — архитектура и инструкция разработчика.
+- Очередь из нескольких файлов: выбор, перетаскивание, изменение порядка и удаление записей.
+- Три режима Markdown-заметок: отдельно, вместе или по заданным группам.
+- Отображение этапа и прогресса обработки, отмена текущей задачи.
+- Локальная транскрибация через whisper.cpp: CPU или Vulkan при поддержке видеокартой; автоматический переход на CPU при ошибке Vulkan.
+- История готовых заметок с поиском и постоянные настройки.
+- Автономная работа без аккаунта и облачного сервиса.
 
-## Запуск
+Транскрибация в реальном времени, облачная синхронизация и автоматическое AI-конспектирование в версию 1.0 не входят.
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\transcribe.ps1 -InputPath .\inbox\lecture.m4a
-```
+## Где хранятся данные
 
-Сценарий сам преобразует запись в рабочий WAV, создаёт отдельную папку результата и сохраняет в ней:
+| Данные | Расположение по умолчанию |
+| --- | --- |
+| Markdown-заметки | `Документы\WhisperMd` |
+| Настройки и история | `%LOCALAPPDATA%\WhisperMd` |
+| Временные файлы обработки | `%LOCALAPPDATA%\WhisperMd\runtime` |
 
-- обычный текст `.txt`;
-- субтитры с временными метками `.srt`;
-- подробные данные `.json`.
+Папка библиотеки заметок настраивается в приложении. При удалении программы пользовательская библиотека, история и настройки сохраняются.
 
-По умолчанию используется русский язык и Vulkan-сборка, если она успешно установлена. CPU-сборку можно выбрать явно:
+## Для разработчиков
+
+В репозитории находятся исходники WPF-приложения, старый прототип WinForms, скрипты сборки и документация. Большие зависимости и готовый установщик не хранятся в Git.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\transcribe.ps1 -InputPath .\inbox\lecture.m4a -Backend cpu
+dotnet build .\src\WhisperMd.App\WhisperMd.App.csproj -c Release
 ```
 
-Исходная запись не удаляется автоматически. Временный WAV удаляется только после успешной транскрибации.
-
-Для записи не на русском языке укажите язык вручную, например `-Language en`. Чтобы сохранить рабочий WAV для диагностики, добавьте `-KeepWav`.
-
-Версии компонентов и результаты самопроверки записаны в `INSTALLATION.md`.
-
-## Разработка
-
-Открыть `Transcription.sln` в Visual Studio либо выполнить:
+Для запуска из исходников и сборки установщика дополнительно нужны локальная модель Whisper, whisper.cpp, FFmpeg и Inno Setup 6. Подготовка среды описана в [INSTALLATION.md](INSTALLATION.md) и [руководстве разработчика](docs/DEVELOPMENT.md). Сборка установщика:
 
 ```powershell
-dotnet build .\Transcription.sln -c Release
+.\scripts\build-installer.ps1
 ```
 
-Проверка всей локальной среды:
+Основной интерфейс находится в `src/WhisperMd.App`; прототип WinForms сохранён в `src/WhisperMd`. Отдельный `transcribe.ps1` формирует технические TXT, SRT и JSON и используется приложением как backend.
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-environment.ps1
-```
+## Документация
 
-Публикация новой автономной сборки в `releases\current`:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1
-```
-
-Подробности: `docs\DEVELOPMENT.md` и `docs\ARCHITECTURE.md`.
-
-### Новый WPF-интерфейс
-
-Проверочная сборка нового приложения:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-wpf.ps1
-```
-
-WPF формирует immutable `TranscriptionJob` и исполняет записи последовательно через `TranscriptionJobRunner -> IWhisperBackendClient -> WhisperBackendClient -> transcribe.ps1`. Stage5 добавляет progress/cancellation, stage6 формирует Markdown в режимах Separate / Combined / CustomGroups, stages7–9 добавляют SQLite-историю, постоянные настройки, библиотеку Markdown и UX-доработки. После их Windows-проверки до v1 остаются installer и финальный release smoke-test.
-
-Быстрая проверка текущего WPF/application-layer:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-stage6-9.ps1
-
-# либо двойным кликом:
-.\scripts\verify-stage6-9.cmd
-```
-
-Постоянные пользовательские данные WPF:
-
-- `%LOCALAPPDATA%\WhisperMd\settings.json` — настройки;
-- `%LOCALAPPDATA%\WhisperMd\history.db` — SQLite-индекс истории;
-- `Documents\WhisperMd` — Markdown-библиотека по умолчанию (можно изменить в настройках).
-
-
-## Сборка v1 installer
-
-Финальный Windows-релиз собирается из локально установленных runtime-зависимостей проекта:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1
-```
-
-Скрипт публикует WPF как self-contained `win-x64`, проверяет SHA-256 `ggml-small.bin`, формирует минимальный release payload и вызывает Inno Setup 6. Итог: `release/WhisperMd-Setup-1.0.0.exe`.
-
-Если Inno Setup 6 не установлен, его можно установить через `winget install --id JRSoftware.InnoSetup -e`, затем повторить сборку.
-
-В установленном приложении модель, `whisper.cpp`, FFmpeg и `transcribe.ps1` находятся рядом с `WhisperMd.exe`, а временные WAV и технические TXT/SRT/JSON WPF пишет в `%LOCALAPPDATA%\WhisperMd\runtime`. Markdown-библиотека и история остаются пользовательскими данными и не удаляются при деинсталляции.
+- [Что вошло в v1.0.0](docs/RELEASE_NOTES_V1.md)
+- [Архитектура](docs/ARCHITECTURE.md)
+- [Разработка и сборка](docs/DEVELOPMENT.md)
+- [Проверки релиза](docs/RELEASE_CHECKLIST_V1.md)
+- [Сторонние компоненты](THIRD_PARTY_NOTICES.md)

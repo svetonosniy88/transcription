@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="240" viewBox="0 0 960 240" role="img" aria-labelledby="title desc">
+  <title id="title">WhisperMd</title>
+  <desc id="desc">Локальная транскрибация записей в Markdown</desc>
+  <rect width="960" height="240" rx="20" fill="#171A20"/>
+  <rect x="0" y="0" width="9" height="240" fill="#4D67FF"/>
+  <g fill="none" stroke="#4D67FF" stroke-linecap="round" stroke-width="8">
+    <path d="M78 121v-25m22 49V71m22 92V77m22 61v-37m22 79V60m22 96V84m22 65v-56m22 30v-8"/>
+  </g>
+  <path d="M269 120h62" stroke="#9CA4B2" stroke-width="4" stroke-linecap="round"/>
+  <path d="m322 110 12 10-12 10" fill="none" stroke="#9CA4B2" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="363" y="68" width="96" height="105" rx="12" fill="#242832" stroke="#4D67FF" stroke-width="3"/>
+  <path d="M387 99h47M387 121h47M387 143h31" stroke="#F5F7FA" stroke-width="5" stroke-linecap="round"/>
+  <text x="505" y="110" fill="#F5F7FA" font-family="Segoe UI, Arial, sans-serif" font-size="46" font-weight="700">WhisperMd</text>
+  <text x="506" y="150" fill="#9CA4B2" font-family="Segoe UI, Arial, sans-serif" font-size="20">ЗАПИСЬ → ТЕКСТ → ЗАМЕТКА</text>
+  <text x="507" y="185" fill="#7786FF" font-family="Segoe UI, Arial, sans-serif" font-size="15" letter-spacing="2">WINDOWS · ЛОКАЛЬНО · MARKDOWN</text>
+</svg>
