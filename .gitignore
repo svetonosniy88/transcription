@@ -39,3 +39,6 @@
 # Результаты транскрибации не являются исходным кодом проекта.
 /output/*
 !/output/.gitkeep
+
+# Generated v1 release payload and installer.
+/release/

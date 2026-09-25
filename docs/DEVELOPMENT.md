@@ -49,3 +49,45 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1 
 - позволить выбирать папку результата;
 - добавить очередь нескольких файлов;
 - покрыть разбор вывода процесса и поиск результатов тестами.
+
+## Backend protocol
+
+Начиная с этапа 3 WPF должен получать результат и состояние только через `WHISPERMD_EVENT <json>`. Не добавлять новый парсинг human-readable stdout (`Results:`, `Done.` и т.п.). Схема событий описана в `docs/BACKEND_PROTOCOL.md`.
+
+Для одной записи использовать `WhisperBackendClient`. Последовательность нескольких записей должна строиться поверх него, а не переноситься внутрь `transcribe.ps1`.
+
+Автоматическая локальная проверка protocol для короткой записи:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-backend-protocol.ps1 -InputPath 'C:\path\to\short-recording.m4a'
+```
+
+Она выполняет отдельные CPU/Vulkan прогоны, проверяет JSON events, progress, result paths, `-Prompt` и сохранённую legacy-строку `Results:`.
+
+## Исполнение очереди WPF
+
+Начиная с этапа 4 последовательность нескольких записей реализуется в `Execution/TranscriptionJobRunner`.
+
+Правила слоя:
+
+- `WhisperBackendClient` остаётся примитивом ровно одной записи;
+- `transcribe.ps1` не должен знать о пользовательской очереди или группах заметок;
+- ViewModel не должна содержать цикл вызовов PowerShell напрямую;
+- ошибки отдельных элементов возвращаются как `TranscriptionItemRunResult` и не прерывают очередь;
+- `TranscriptionJobRunResult.Job` хранит immutable snapshot настроек/порядка, использованных именно в этом запуске; будущая Markdown-агрегация должна опираться на него, а не на потенциально изменённый UI после завершения.
+
+## Автоматическая проверка persistence / history / settings
+
+После stages 7–9 основной быстрый локальный прогон:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-stage6-9.ps1
+```
+
+Он последовательно:
+
+1. собирает WPF;
+2. прогоняет verifier Markdown stage6;
+3. проверяет JSON settings, передачу backend/language/threads, routing в library и SQLite history/search/persistence.
+
+Для source snapshot использовать `scripts/package-source.ps1`. В отличие от раннего временного скрипта он исключает только корневую папку `models` с весами и **не исключает** `src\WhisperMd.App\Models`.

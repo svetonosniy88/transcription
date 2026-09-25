@@ -1,0 +1,596 @@
+<UserControl x:Class="WhisperMd.App.Views.TranscriptionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:WhisperMd.App.Models"
+             AllowDrop="True"
+             DragEnter="Root_DragEnter"
+             DragLeave="Root_DragLeave"
+             Drop="Root_Drop">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="38,32,38,34">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="24" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="20" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="Транскрибация" />
+                    <TextBlock Style="{StaticResource MutedTextStyle}"
+                               Margin="0,7,0,0"
+                               Text="Соберите записи в очередь, задайте порядок и способ формирования Markdown-заметок." />
+                </StackPanel>
+                <Border Grid.Column="1"
+                        VerticalAlignment="Top"
+                        Padding="10,6"
+                        Background="{StaticResource PrimarySoftBrush}"
+                        CornerRadius="7">
+                    <TextBlock Text="Локально"
+                               Foreground="{StaticResource PrimaryBrush}"
+                               FontFamily="Segoe UI Semibold"
+                               FontSize="12" />
+                </Border>
+            </Grid>
+
+            <Border x:Name="DropZoneBorder"
+                    Grid.Row="2"
+                    MinHeight="174"
+                    IsEnabled="{Binding CanEditJob}"
+                    Padding="26"
+                    Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    AllowDrop="True"
+                    DragEnter="Root_DragEnter"
+                    DragLeave="Root_DragLeave"
+                    Drop="Root_Drop">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="50" Height="50" Background="{StaticResource PrimarySoftBrush}" CornerRadius="25">
+                        <TextBlock Text="＋"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource PrimaryBrush}"
+                                   FontSize="25" />
+                    </Border>
+                    <TextBlock Margin="0,13,0,0"
+                               HorizontalAlignment="Center"
+                               FontFamily="Segoe UI Semibold"
+                               FontSize="16"
+                               Text="Добавьте аудиозаписи" />
+                    <TextBlock Margin="0,5,0,0"
+                               HorizontalAlignment="Center"
+                               Style="{StaticResource MutedTextStyle}"
+                               Text="Перетащите несколько файлов сюда или выберите их вручную" />
+                    <Button Margin="0,14,0,0"
+                            HorizontalAlignment="Center"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Click="SelectFilesButton_Click"
+                            Content="Выбрать файлы" />
+                </StackPanel>
+            </Border>
+
+            <Grid Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="1*" MinWidth="300" MaxWidth="390" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        MinHeight="390"
+                        Padding="22"
+                        Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="12" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Очередь" />
+                                <TextBlock Style="{StaticResource MutedTextStyle}"
+                                           Margin="0,4,14,0"
+                                           TextWrapping="Wrap"
+                                           Text="Перетаскивайте карточки или используйте стрелки. Этот порядок попадёт в итоговую заметку." />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Margin="0,0,12,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Text="{Binding QueueCountText}" />
+                                <Button Style="{StaticResource CompactButtonStyle}"
+                                        Command="{Binding ClearQueueCommand}"
+                                        Content="Очистить" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Grid.Row="2"
+                                Padding="10,8"
+                                Background="{StaticResource SurfaceMutedBrush}"
+                                CornerRadius="7">
+                            <TextBlock Style="{StaticResource MutedTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding QueueMessage}" />
+                        </Border>
+
+                        <Grid Grid.Row="4">
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding IsQueueEmpty, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock HorizontalAlignment="Center"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           FontSize="14"
+                                           Text="Очередь пока пуста" />
+                                <TextBlock Margin="0,5,0,0"
+                                           HorizontalAlignment="Center"
+                                           Foreground="#9AA0AA"
+                                           FontSize="12"
+                                           Text="Поддерживаются основные аудио- и медиаконтейнеры FFmpeg." />
+                            </StackPanel>
+
+                            <ListBox x:Name="QueueListBox"
+                                     ItemsSource="{Binding Recordings}"
+                                     Visibility="{Binding HasRecordings, Converter={StaticResource BoolToVisibilityConverter}}"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     AllowDrop="True"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     PreviewMouseLeftButtonDown="QueueListBox_PreviewMouseLeftButtonDown"
+                                     PreviewMouseMove="QueueListBox_PreviewMouseMove"
+                                     DragOver="QueueListBox_DragOver"
+                                     Drop="QueueListBox_Drop">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0,0,0,8" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Focusable" Value="False" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <ContentPresenter />
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type models:Recording}">
+                                        <Border Padding="13"
+                                                Background="{StaticResource SurfaceBrush}"
+                                                BorderBrush="{StaticResource BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="9">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Width="38" Height="38"
+                                                        Margin="0,0,12,0"
+                                                        VerticalAlignment="Top"
+                                                        Background="{StaticResource PrimarySoftBrush}"
+                                                        CornerRadius="8">
+                                                    <TextBlock HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="{StaticResource PrimaryBrush}"
+                                                               FontFamily="Segoe UI Semibold"
+                                                               FontSize="10"
+                                                               Text="{Binding Extension}" />
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" MinWidth="0">
+                                                    <TextBlock FontFamily="Segoe UI Semibold"
+                                                               FontSize="13"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding FullPath}"
+                                                               Text="{Binding FileName}" />
+                                                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                                                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="{Binding FileSizeText}" />
+                                                        <TextBlock Margin="8,0" Style="{StaticResource MutedTextStyle}" Text="·" />
+                                                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="{Binding StatusText}" />
+                                                        <TextBlock Margin="8,0" Style="{StaticResource MutedTextStyle}" Text="·" />
+                                                        <TextBlock Style="{StaticResource MutedTextStyle}" Text="{Binding ProgressText}" />
+                                                    </StackPanel>
+
+                                                    <ProgressBar Height="3"
+                                                                 Margin="0,8,0,0"
+                                                                 Minimum="0"
+                                                                 Maximum="100"
+                                                                 Value="{Binding Progress}" />
+                                                    <TextBlock Margin="0,6,0,0"
+                                                               Foreground="#C33D3D"
+                                                               FontSize="11"
+                                                               TextWrapping="Wrap"
+                                                               Text="{Binding ErrorMessage}"
+                                                               Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                                                    <Grid Margin="0,9,0,0"
+                                                          Visibility="{Binding DataContext.IsCustomGroupsMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="8" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock VerticalAlignment="Center"
+                                                                   Style="{StaticResource MutedTextStyle}"
+                                                                   Text="Группа" />
+                                                        <ComboBox Grid.Column="2"
+                                                                  MinWidth="150"
+                                                                  IsEnabled="{Binding DataContext.CanEditJob, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                  Height="32"
+                                                                  Padding="6,3"
+                                                                  ItemsSource="{Binding DataContext.Groups, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                  DisplayMemberPath="Name"
+                                                                  SelectedValuePath="Id"
+                                                                  SelectedValue="{Binding GroupId, Mode=OneWay}"
+                                                                  SelectionChanged="GroupComboBox_SelectionChanged" />
+                                                    </Grid>
+                                                </StackPanel>
+
+                                                <StackPanel Grid.Column="2"
+                                                            Margin="12,0,0,0"
+                                                            Orientation="Horizontal"
+                                                            VerticalAlignment="Top">
+                                                    <Button Width="31" Height="31"
+                                                            Margin="0,0,5,0"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip="Поднять выше"
+                                                            Content="↑" />
+                                                    <Button Width="31" Height="31"
+                                                            Margin="0,0,5,0"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip="Опустить ниже"
+                                                            Content="↓" />
+                                                    <Button Width="31" Height="31"
+                                                            Style="{StaticResource IconButtonStyle}"
+                                                            Command="{Binding DataContext.RemoveRecordingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTip="Удалить из очереди"
+                                                            Content="×" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="2">
+                    <Border Padding="20"
+                            IsEnabled="{Binding CanEditJob}"
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Результат" />
+                            <TextBlock Style="{StaticResource MutedTextStyle}"
+                                       Margin="0,4,0,12"
+                                       Text="Как собрать загруженные записи." />
+
+                            <RadioButton Margin="0,4"
+                                         GroupName="NoteMode"
+                                         IsChecked="{Binding IsSeparateMode, Mode=OneWay}"
+                                         Command="{Binding SetNoteModeCommand}"
+                                         CommandParameter="Separate"
+                                         Content="Каждая запись отдельно" />
+                            <RadioButton Margin="0,7,0,4"
+                                         GroupName="NoteMode"
+                                         IsChecked="{Binding IsCombinedMode, Mode=OneWay}"
+                                         Command="{Binding SetNoteModeCommand}"
+                                         CommandParameter="Combined"
+                                         Content="Все записи в одну заметку" />
+                            <RadioButton Margin="0,7,0,4"
+                                         GroupName="NoteMode"
+                                         IsChecked="{Binding IsCustomGroupsMode, Mode=OneWay}"
+                                         Command="{Binding SetNoteModeCommand}"
+                                         CommandParameter="CustomGroups"
+                                         Content="Пользовательские группы" />
+
+                            <TextBlock Margin="0,8,0,0"
+                                       Style="{StaticResource MutedTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding NoteModeDescription}" />
+
+                            <StackPanel Margin="0,14,0,0"
+                                        Visibility="{Binding IsCombinedMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <TextBlock Margin="0,0,0,6"
+                                           FontFamily="Segoe UI Semibold"
+                                           FontSize="13"
+                                           Text="Название заметки" />
+                                <TextBox Height="34"
+                                         Padding="8,4"
+                                         Text="{Binding CombinedNoteTitle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Margin="0,5,0,0"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           TextWrapping="Wrap"
+                                           Text="Если оставить пустым, название будет сформировано из первого файла." />
+                            </StackPanel>
+
+                            <StackPanel Margin="0,16,0,0"
+                                        Visibility="{Binding IsCustomGroupsMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock VerticalAlignment="Center"
+                                               FontFamily="Segoe UI Semibold"
+                                               FontSize="13"
+                                               Text="Группы заметок" />
+                                    <Button Grid.Column="1"
+                                            Style="{StaticResource CompactButtonStyle}"
+                                            Command="{Binding AddGroupCommand}"
+                                            Content="＋ Добавить" />
+                                </Grid>
+
+                                <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding Groups}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:RecordingGroup}">
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="6" />
+                                                    <ColumnDefinition Width="31" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Height="32"
+                                                         Padding="8,4"
+                                                         Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                                                <Button Grid.Column="2"
+                                                        Width="31" Height="31"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Command="{Binding DataContext.RemoveGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Удалить группу"
+                                                        Content="×" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <Grid Margin="0,18,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center"
+                                           FontFamily="Segoe UI Semibold"
+                                           FontSize="13"
+                                           Text="Контекст для Whisper" />
+                                <Button Grid.Column="1"
+                                        Style="{StaticResource CompactButtonStyle}"
+                                        Command="{Binding UseDefaultPromptCommand}"
+                                        Content="Из настроек" />
+                            </Grid>
+                            <TextBox Height="94"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalContentAlignment="Top"
+                                     Text="{Binding ContextPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Style="{StaticResource MutedTextStyle}"
+                                       Margin="0,6,0,0"
+                                       TextWrapping="Wrap"
+                                       Text="Предмет, термины, фамилии и обозначения, которые могут помочь распознаванию." />
+
+                            <Border Margin="0,16,0,0"
+                                    Padding="11,9"
+                                    Background="{StaticResource SurfaceMutedBrush}"
+                                    CornerRadius="7">
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource MutedTextStyle}"
+                                               TextWrapping="Wrap"
+                                               Text="Новые Markdown сохраняются в библиотеку:" />
+                                    <TextBlock Margin="0,3,0,0"
+                                               FontFamily="Segoe UI Semibold"
+                                               FontSize="11"
+                                               TextWrapping="Wrap"
+                                               Text="{Binding LibraryDirectory}" />
+                                    <TextBlock Margin="0,6,0,0"
+                                               Style="{StaticResource MutedTextStyle}"
+                                               Text="{Binding RunSettingsSummary}" />
+                                    <Button Margin="0,8,0,0"
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource CompactButtonStyle}"
+                                            Command="{Binding OpenLibraryCommand}"
+                                            Content="Открыть библиотеку" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Margin="0,14,0,0"
+                            Padding="16"
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel>
+                            <StackPanel>
+                                <TextBlock FontFamily="Segoe UI Semibold"
+                                           FontSize="13"
+                                           Text="{Binding CurrentItemText}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Margin="0,3,0,0"
+                                           Style="{StaticResource MutedTextStyle}"
+                                           Text="{Binding CurrentStageText}" />
+                            </StackPanel>
+
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource MutedTextStyle}" Text="Текущий файл" />
+                                <TextBlock Grid.Column="1"
+                                           FontFamily="Segoe UI Semibold"
+                                           FontSize="12"
+                                           Text="{Binding CurrentFileProgressText}" />
+                            </Grid>
+                            <ProgressBar Height="6"
+                                         Margin="0,5,0,0"
+                                         Minimum="0"
+                                         Maximum="100"
+                                         Value="{Binding CurrentFileProgress, Mode=OneWay}" />
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource MutedTextStyle}" Text="Вся очередь" />
+                                <TextBlock Grid.Column="1"
+                                           FontFamily="Segoe UI Semibold"
+                                           FontSize="12"
+                                           Foreground="{StaticResource PrimaryBrush}"
+                                           Text="{Binding OverallProgressText}" />
+                            </Grid>
+                            <ProgressBar Height="7"
+                                         Margin="0,5,0,0"
+                                         Minimum="0"
+                                         Maximum="100"
+                                         Value="{Binding OverallProgress, Mode=OneWay}" />
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource MutedTextStyle}" Text="Прошло" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               FontFamily="Segoe UI Semibold"
+                                               FontSize="13"
+                                               Text="{Binding ElapsedText}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                    <TextBlock HorizontalAlignment="Right"
+                                               Style="{StaticResource MutedTextStyle}"
+                                               Text="Осталось, приблизительно" />
+                                    <TextBlock Margin="0,2,0,0"
+                                               HorizontalAlignment="Right"
+                                               FontFamily="Segoe UI Semibold"
+                                               FontSize="13"
+                                               Text="{Binding EstimatedRemainingText}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Margin="0,14,0,0"
+                            Padding="16"
+                            Background="{StaticResource SurfaceBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Visibility="{Binding HasSavedNotes, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock FontFamily="Segoe UI Semibold"
+                                       FontSize="13"
+                                       Text="{Binding SavedNotesSummary}" />
+                            <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding SavedNotes}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,8"
+                                                Padding="9"
+                                                Background="{StaticResource SurfaceMutedBrush}"
+                                                CornerRadius="7">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock FontFamily="Segoe UI Semibold"
+                                                               FontSize="12"
+                                                               Text="{Binding Title}" />
+                                                    <TextBlock Margin="0,2,0,0"
+                                                               Style="{StaticResource MutedTextStyle}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Text="{Binding FilePath}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="8,0,0,0" Orientation="Horizontal">
+                                                    <Button Style="{StaticResource CompactButtonStyle}"
+                                                            Command="{Binding DataContext.OpenSavedNoteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Content="Открыть" />
+                                                    <Button Margin="6,0,0,0"
+                                                            Style="{StaticResource CompactButtonStyle}"
+                                                            Command="{Binding DataContext.OpenSavedNoteFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Content="В папке" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Margin="0,14,0,0"
+                            Padding="13,11"
+                            Background="{StaticResource PrimarySoftBrush}"
+                            CornerRadius="8"
+                            Visibility="{Binding HasRecordings, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Foreground="{StaticResource PrimaryBrush}"
+                                   FontSize="12"
+                                   TextWrapping="Wrap"
+                                   Text="Очередь выполняется последовательно. Ошибка одной записи не останавливает остальные файлы." />
+                    </Border>
+
+                    <Button Margin="0,10,0,0"
+                            Height="44"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding StartTranscriptionCommand}"
+                            Content="{Binding StartButtonText}" />
+
+                    <Button Margin="0,8,0,0"
+                            Height="40"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Foreground="#C33D3D"
+                            Command="{Binding CancelTranscriptionCommand}"
+                            Content="{Binding CancelButtonText}"
+                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

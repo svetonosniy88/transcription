@@ -10,7 +10,7 @@
 releases\WhisperMd-v0.0.1\WhisperMd.exe
 ```
 
-Оконное приложение позволяет выбрать аудиофайл, запускает локальную модель и сохраняет Markdown рядом с исходной записью.
+Legacy WinForms позволяет обработать один файл и сохраняется как рабочая точка возврата. Новый WPF-интерфейс v1 поддерживает очередь, группы, progress/cancellation, Markdown-библиотеку, историю и постоянные настройки.
 
 ## Поток работы
 
@@ -22,7 +22,8 @@ releases\WhisperMd-v0.0.1\WhisperMd.exe
 
 ## Папки
 
-- `src/WhisperMd` — исходный код Windows Forms-приложения.
+- `src/WhisperMd.App` — новый WPF-интерфейс v1 (очередь, группы и application-layer исполнения).
+- `src/WhisperMd` — legacy Windows Forms-приложение, сохраняемое как рабочая точка возврата.
 - `releases` — локальные готовые сборки приложения.
 - `app/whisper.cpp` — исходники и собранные CPU/Vulkan-версии `whisper.cpp`.
 - `models` — мультиязычная модель Whisper `small` (`ggml-small.bin`).
@@ -79,3 +80,43 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-gui.ps1
 ```
 
 Подробности: `docs\DEVELOPMENT.md` и `docs\ARCHITECTURE.md`.
+
+### Новый WPF-интерфейс
+
+Проверочная сборка нового приложения:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-wpf.ps1
+```
+
+WPF формирует immutable `TranscriptionJob` и исполняет записи последовательно через `TranscriptionJobRunner -> IWhisperBackendClient -> WhisperBackendClient -> transcribe.ps1`. Stage5 добавляет progress/cancellation, stage6 формирует Markdown в режимах Separate / Combined / CustomGroups, stages7–9 добавляют SQLite-историю, постоянные настройки, библиотеку Markdown и UX-доработки. После их Windows-проверки до v1 остаются installer и финальный release smoke-test.
+
+Быстрая проверка текущего WPF/application-layer:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-stage6-9.ps1
+
+# либо двойным кликом:
+.\scripts\verify-stage6-9.cmd
+```
+
+Постоянные пользовательские данные WPF:
+
+- `%LOCALAPPDATA%\WhisperMd\settings.json` — настройки;
+- `%LOCALAPPDATA%\WhisperMd\history.db` — SQLite-индекс истории;
+- `Documents\WhisperMd` — Markdown-библиотека по умолчанию (можно изменить в настройках).
+
+
+## Сборка v1 installer
+
+Финальный Windows-релиз собирается из локально установленных runtime-зависимостей проекта:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\build-installer.ps1
+```
+
+Скрипт публикует WPF как self-contained `win-x64`, проверяет SHA-256 `ggml-small.bin`, формирует минимальный release payload и вызывает Inno Setup 6. Итог: `release/WhisperMd-Setup-1.0.0.exe`.
+
+Если Inno Setup 6 не установлен, его можно установить через `winget install --id JRSoftware.InnoSetup -e`, затем повторить сборку.
+
+В установленном приложении модель, `whisper.cpp`, FFmpeg и `transcribe.ps1` находятся рядом с `WhisperMd.exe`, а временные WAV и технические TXT/SRT/JSON WPF пишет в `%LOCALAPPDATA%\WhisperMd\runtime`. Markdown-библиотека и история остаются пользовательскими данными и не удаляются при деинсталляции.
