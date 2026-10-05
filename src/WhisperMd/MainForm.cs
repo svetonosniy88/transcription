@@ -268,7 +268,7 @@ public sealed class MainForm : Form
                 return directory.FullName;
         }
 
-        const string localFallback = @"C:\Base\Transcription";
+        const string localFallback = @"C:\Base\projects\Transcription";
         return localFallback;
     }
 
