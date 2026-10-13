@@ -48,6 +48,7 @@ public sealed class TranscriptionJobRunner
                         Backend: job.Backend,
                         Language: job.Language,
                         Threads: job.Threads,
+                        RecognitionMode: job.RecognitionMode,
                         Prompt: job.ContextPrompt,
                         WorkingDirectory: AppDataPaths.RuntimeWorkingDirectory,
                         OutputDirectory: AppDataPaths.RuntimeOutputDirectory),

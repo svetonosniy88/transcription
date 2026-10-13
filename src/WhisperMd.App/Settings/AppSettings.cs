@@ -7,7 +7,8 @@ public sealed record AppSettings(
     string Backend,
     int Threads,
     string LibraryDirectory,
-    string DefaultPrompt)
+    string DefaultPrompt,
+    string RecognitionMode = "auto")
 {
     public static AppSettings CreateDefault()
     {
@@ -36,6 +37,13 @@ public sealed record AppSettings(
 
         var language = string.IsNullOrWhiteSpace(Language) ? defaults.Language : Language.Trim().ToLowerInvariant();
         var threads = Math.Clamp(Threads, 1, 32);
+        var recognitionMode = RecognitionMode?.Trim().ToLowerInvariant() switch
+        {
+            "standard" => "standard",
+            "balanced" => "balanced",
+            "thorough" => "thorough",
+            _ => "auto"
+        };
         var library = string.IsNullOrWhiteSpace(LibraryDirectory)
             ? defaults.LibraryDirectory
             : Path.GetFullPath(Environment.ExpandEnvironmentVariables(LibraryDirectory.Trim()));
@@ -45,6 +53,7 @@ public sealed record AppSettings(
             Language = language,
             Backend = backend,
             Threads = threads,
+            RecognitionMode = recognitionMode,
             LibraryDirectory = library,
             DefaultPrompt = DefaultPrompt?.Trim() ?? string.Empty
         };

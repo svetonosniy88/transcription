@@ -8,4 +8,5 @@ public sealed record BackendRunRequest(
     string Prompt = "",
     bool KeepWav = false,
     string? WorkingDirectory = null,
-    string? OutputDirectory = null);
+    string? OutputDirectory = null,
+    string RecognitionMode = "auto");

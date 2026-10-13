@@ -424,6 +424,7 @@
                                                Text="{Binding LibraryDirectory}" />
                                     <TextBlock Margin="0,6,0,0"
                                                Style="{StaticResource MutedTextStyle}"
+                                               TextWrapping="Wrap"
                                                Text="{Binding RunSettingsSummary}" />
                                     <Button Margin="0,8,0,0"
                                             HorizontalAlignment="Left"

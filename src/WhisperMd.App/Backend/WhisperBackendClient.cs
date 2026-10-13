@@ -156,6 +156,8 @@ public sealed class WhisperBackendClient : IWhisperBackendClient
         startInfo.ArgumentList.Add(request.Language);
         startInfo.ArgumentList.Add("-Threads");
         startInfo.ArgumentList.Add(request.Threads.ToString());
+        startInfo.ArgumentList.Add("-RecognitionMode");
+        startInfo.ArgumentList.Add(request.RecognitionMode);
 
         if (!string.IsNullOrWhiteSpace(request.Prompt))
         {
@@ -236,6 +238,9 @@ public sealed class WhisperBackendClient : IWhisperBackendClient
 
         if (request.Threads is < 1 or > 32)
             throw new ArgumentOutOfRangeException(nameof(request.Threads), "Threads must be between 1 and 32.");
+
+        if (request.RecognitionMode is not ("auto" or "standard" or "balanced" or "thorough"))
+            throw new ArgumentException("Unknown recognition mode.", nameof(request.RecognitionMode));
 
         if (string.IsNullOrWhiteSpace(request.Language))
             throw new ArgumentException("Language must not be empty.", nameof(request.Language));

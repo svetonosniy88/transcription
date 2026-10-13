@@ -13,6 +13,9 @@ param(
 
     [string]$Prompt = '',
 
+    [ValidateSet('auto', 'standard', 'balanced', 'thorough')]
+    [string]$RecognitionMode = 'auto',
+
     [string]$WorkingDirectory = '',
 
     [string]$OutputDirectory = '',
@@ -183,11 +186,26 @@ try {
             [string]$BackendName
         )
 
+        # At temperature 0 Whisper uses beam search. On uncertain segments its
+        # built-in temperature fallback retries with BestOf sampled candidates.
+        # Auto spends the extra search only on those retries, without a second
+        # transcription pass over the whole recording.
+        $beamSize = switch ($RecognitionMode) {
+            'standard' { 5 }
+            'thorough' { 8 }
+            default { 6 }
+        }
+        $bestOf = if ($RecognitionMode -eq 'auto') { 8 } else { 5 }
+
         $arguments = @(
             '-m', $model,
             '-f', $wavPath,
             '-l', $Language,
             '-t', $Threads.ToString(),
+            '-bs', $beamSize.ToString(),
+            '-bo', $bestOf.ToString(),
+            '-tp', '0',
+            '-tpi', '0.2',
             '-otxt',
             '-osrt',
             '-ojf',
@@ -204,7 +222,7 @@ try {
         }
 
         Write-WhisperMdEvent -Type 'backend_selected' -Data @{ backend = $BackendName }
-        Write-TechLog "Starting Whisper ($BackendName, language: $Language, threads: $Threads)..."
+        Write-TechLog "Starting Whisper ($BackendName, language: $Language, threads: $Threads, recognition: $RecognitionMode, beam: $beamSize, best-of: $bestOf)..."
         Write-WhisperMdEvent -Type 'progress' -Data @{ value = 0 }
 
         return Invoke-LoggedNativeCommand -FilePath $CliPath -Arguments $arguments -ParseWhisperProgress

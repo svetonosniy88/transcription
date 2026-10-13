@@ -65,6 +65,20 @@
 
                         <TextBlock Margin="0,16,0,6" FontFamily="Segoe UI Semibold" FontSize="13" Text="Модель" />
                         <TextBox IsReadOnly="True" Text="small · ggml-small.bin" />
+
+                        <TextBlock Margin="0,16,0,6" FontFamily="Segoe UI Semibold" FontSize="13" Text="Режим распознавания" />
+                        <ComboBox ItemsSource="{Binding RecognitionModeOptions}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="Value"
+                                  SelectedValue="{Binding RecognitionMode, Mode=TwoWay}" />
+                        <TextBlock Margin="0,7,0,0"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding RecognitionModeDescription}" />
+                        <TextBlock Margin="0,7,0,0"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   TextWrapping="Wrap"
+                                   Text="Ориентир: до 30 минут обработки на час записи. Время зависит от записи и компьютера." />
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
@@ -76,12 +90,16 @@
                                    Style="{StaticResource MutedTextStyle}"
                                    Text="Используется CPU и CPU fallback. Допустимо 1–32." />
 
-                        <TextBlock Margin="0,16,0,6" FontFamily="Segoe UI Semibold" FontSize="13" Text="Prompt по умолчанию" />
+                        <TextBlock Margin="0,16,0,6" FontFamily="Segoe UI Semibold" FontSize="13" Text="Контекстная подсказка по умолчанию" />
                         <TextBox MinHeight="102"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
                                  VerticalContentAlignment="Top"
                                  Text="{Binding DefaultPrompt, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Margin="0,7,0,0"
+                                   Style="{StaticResource MutedTextStyle}"
+                                   TextWrapping="Wrap"
+                                   Text="Укажите тему, редкие термины, имена и сокращения в правильном написании. Например: топология, гомеоморфизм, многообразие. Подсказка помогает распознаванию, но не гарантирует точность." />
                     </StackPanel>
                 </Grid>
             </Border>

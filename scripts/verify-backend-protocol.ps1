@@ -3,7 +3,10 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$InputPath,
 
-    [string]$Prompt = 'WhisperMd protocol verification: mathematics lecture, numerical series.'
+    [string]$Prompt = 'WhisperMd protocol verification: mathematics lecture, numerical series.',
+
+    [ValidateSet('auto', 'standard', 'balanced', 'thorough')]
+    [string]$RecognitionMode = 'auto'
 )
 
 Set-StrictMode -Version Latest
@@ -59,7 +62,8 @@ function Invoke-ProtocolCheck {
             '-Backend', $BackendName,
             '-Language', 'ru',
             '-Threads', '8',
-            '-Prompt', $Prompt
+            '-Prompt', $Prompt,
+            '-RecognitionMode', $RecognitionMode
         )
 
         # Windows PowerShell 5.1 can promote redirected native stderr to a
@@ -123,6 +127,16 @@ function Invoke-ProtocolCheck {
 
         Assert-Condition $legacyResultLineFound "Legacy Results: line is missing on $BackendName."
 
+        $expectedBeam = switch ($RecognitionMode) {
+            'standard' { 5 }
+            'thorough' { 8 }
+            default { 6 }
+        }
+        $expectedBestOf = if ($RecognitionMode -eq 'auto') { 8 } else { 5 }
+        $technicalText = Get-Content -LiteralPath $stderrPath -Raw
+        Assert-Condition ($technicalText -match "$expectedBeam beams \+ best of $expectedBestOf") `
+            "Whisper did not receive the expected search parameters for '$RecognitionMode' on $BackendName."
+
         $stderrLength = if (Test-Path -LiteralPath $stderrPath) { (Get-Item -LiteralPath $stderrPath).Length } else { 0 }
 
         Write-Host "PASS $BackendName"
@@ -131,6 +145,7 @@ function Invoke-ProtocolCheck {
         Write-Host "  result: $($result.resultDirectory)"
         Write-Host "  technical stderr bytes: $stderrLength"
         Write-Host "  legacy Results: preserved"
+        Write-Host "  recognition: $RecognitionMode (beam $expectedBeam, best-of $expectedBestOf)"
         $passed = $true
     }
     catch {

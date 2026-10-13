@@ -18,6 +18,7 @@ public sealed class SettingsViewModel : ViewModelBase
 
     private string _language;
     private string _backend;
+    private string _recognitionMode;
     private int _threads;
     private string _libraryDirectory;
     private string _defaultPrompt;
@@ -30,6 +31,7 @@ public sealed class SettingsViewModel : ViewModelBase
         var settings = settingsService.Current;
         _language = settings.Language;
         _backend = settings.Backend;
+        _recognitionMode = settings.RecognitionMode;
         _threads = settings.Threads;
         _libraryDirectory = settings.LibraryDirectory;
         _defaultPrompt = settings.DefaultPrompt;
@@ -59,6 +61,32 @@ public sealed class SettingsViewModel : ViewModelBase
         get => _language;
         set => SetAndMarkDirty(ref _language, value ?? "ru");
     }
+
+    public IReadOnlyList<SettingOption> RecognitionModeOptions { get; } = new[]
+    {
+        new SettingOption("auto", "Авто — адаптивный поиск"),
+        new SettingOption("standard", "Стандартный — 5 вариантов"),
+        new SettingOption("balanced", "Умеренный — 6 вариантов"),
+        new SettingOption("thorough", "Расширенный — 8 вариантов")
+    };
+
+    public string RecognitionMode
+    {
+        get => _recognitionMode;
+        set
+        {
+            if (SetAndMarkDirty(ref _recognitionMode, value ?? "auto"))
+                OnPropertyChanged(nameof(RecognitionModeDescription));
+        }
+    }
+
+    public string RecognitionModeDescription => RecognitionMode switch
+    {
+        "standard" => "Прежняя глубина поиска: 5 вариантов и до 5 кандидатов при повторных попытках.",
+        "balanced" => "Небольшое увеличение поиска: 6 вариантов и до 5 кандидатов при повторных попытках.",
+        "thorough" => "Поиск по 8 вариантам на каждом фрагменте; может потребовать больше времени.",
+        _ => "Поиск по 6 вариантам. Если движок не уверен в результате, повторные попытки используют до 8 кандидатов."
+    };
 
     public string Backend
     {
@@ -114,7 +142,7 @@ public sealed class SettingsViewModel : ViewModelBase
     {
         try
         {
-            var settings = new AppSettings(Language, Backend, Threads, LibraryDirectory, DefaultPrompt);
+            var settings = new AppSettings(Language, Backend, Threads, LibraryDirectory, DefaultPrompt, RecognitionMode);
             await _settingsService.SaveAsync(settings);
             Apply(_settingsService.Current);
             IsDirty = false;
@@ -168,12 +196,15 @@ public sealed class SettingsViewModel : ViewModelBase
     {
         _language = settings.Language;
         _backend = settings.Backend;
+        _recognitionMode = settings.RecognitionMode;
         _threads = settings.Threads;
         _libraryDirectory = settings.LibraryDirectory;
         _defaultPrompt = settings.DefaultPrompt;
 
         OnPropertyChanged(nameof(Language));
         OnPropertyChanged(nameof(Backend));
+        OnPropertyChanged(nameof(RecognitionMode));
+        OnPropertyChanged(nameof(RecognitionModeDescription));
         OnPropertyChanged(nameof(Threads));
         OnPropertyChanged(nameof(LibraryDirectory));
         OnPropertyChanged(nameof(DefaultPrompt));

@@ -13,7 +13,8 @@ public sealed record TranscriptionJob(
     string Backend = "auto",
     string Language = "ru",
     int Threads = 8,
-    string? LibraryDirectory = null);
+    string? LibraryDirectory = null,
+    string RecognitionMode = "auto");
 
 public sealed record TranscriptionJobItem(
     Guid RecordingId,

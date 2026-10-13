@@ -88,6 +88,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-stage6-
 
 1. собирает WPF;
 2. прогоняет verifier Markdown stage6;
-3. проверяет JSON settings, передачу backend/language/threads, routing в library и SQLite history/search/persistence.
+3. проверяет JSON settings (включая миграцию и сохранение режима распознавания), передачу backend/language/threads/recognition mode, аргумент recognition mode через реальный PowerShell-процесс, routing в library и SQLite history/search/persistence.
+
+`verify-backend-protocol.ps1` принимает `-RecognitionMode auto|standard|balanced|thorough` (по умолчанию `auto`) и проверяет фактические beam/best-of параметры движка для обоих backend.
 
 Для source snapshot использовать `scripts/package-source.ps1`. В отличие от раннего временного скрипта он исключает только корневую папку `models` с весами и **не исключает** `src\WhisperMd.App\Models`.

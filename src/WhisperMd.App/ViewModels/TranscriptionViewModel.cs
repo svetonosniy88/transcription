@@ -330,7 +330,14 @@ public sealed class TranscriptionViewModel : ViewModelBase
                 "vulkan" => "Vulkan",
                 _ => "Auto"
             };
-            return $"{settings.Language} · {backend} · {settings.Threads} потоков";
+            var recognition = settings.RecognitionMode switch
+            {
+                "standard" => "Стандартный",
+                "balanced" => "Умеренный",
+                "thorough" => "Расширенный",
+                _ => "Авто"
+            };
+            return $"{settings.Language} · {backend} · {settings.Threads} потоков · распознавание: {recognition}";
         }
     }
 
@@ -414,7 +421,8 @@ public sealed class TranscriptionViewModel : ViewModelBase
             settings.Backend,
             settings.Language,
             settings.Threads,
-            settings.LibraryDirectory);
+            settings.LibraryDirectory,
+            settings.RecognitionMode);
     }
 
     public void MoveRecording(Recording source, Recording? target)

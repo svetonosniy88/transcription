@@ -12,6 +12,7 @@ try
 {
     await VerifySettingsAsync(root);
     await VerifyRunnerUsesSettingsAsync(root);
+    await VerifyBackendRecognitionModesAsync(root);
     await VerifyLibraryRoutingAsync(root);
     await VerifyHistoryAsync(root);
 
@@ -41,8 +42,27 @@ static async Task VerifySettingsAsync(string root)
     var path = Path.Combine(root, "settings", "settings.json");
     var library = Path.Combine(root, "library");
     var service = new AppSettingsService(path);
+    Assert(service.Current.RecognitionMode == "auto", "New settings must default to automatic recognition.");
 
-    await service.SaveAsync(new AppSettings("en", "cpu", 5, library, "domain prompt"));
+    // A pre-existing settings file must acquire the new default without losing
+    // the user's language, hardware settings or terminology prompt.
+    var legacyPath = Path.Combine(root, "legacy-settings.json");
+    await File.WriteAllTextAsync(legacyPath, System.Text.Json.JsonSerializer.Serialize(new
+    {
+        Language = "en", Backend = "cpu", Threads = 3,
+        LibraryDirectory = library, DefaultPrompt = "homeomorphism"
+    }));
+    var legacy = new AppSettingsService(legacyPath).Current;
+    Assert(legacy.RecognitionMode == "auto", "Legacy settings did not acquire automatic recognition.");
+    Assert(legacy.Language == "en" && legacy.Backend == "cpu" && legacy.Threads == 3
+        && legacy.DefaultPrompt == "homeomorphism", "Recognition migration lost existing settings.");
+
+    Assert((legacy with { RecognitionMode = "unknown" }).Normalize().RecognitionMode == "auto",
+        "Unknown recognition modes must fall back to auto.");
+    Assert((legacy with { RecognitionMode = " THOROUGH " }).Normalize().RecognitionMode == "thorough",
+        "Recognition mode normalization failed.");
+
+    await service.SaveAsync(new AppSettings("en", "cpu", 5, library, "domain prompt", "thorough"));
     Assert(File.Exists(path), "Settings file was not created.");
     Assert(Directory.Exists(library), "Saving settings must create the library directory.");
 
@@ -52,6 +72,7 @@ static async Task VerifySettingsAsync(string root)
     Assert(reloaded.Threads == 5, "Thread count did not persist.");
     Assert(Path.GetFullPath(reloaded.LibraryDirectory) == Path.GetFullPath(library), "Library directory did not persist.");
     Assert(reloaded.DefaultPrompt == "domain prompt", "Default prompt did not persist.");
+    Assert(reloaded.RecognitionMode == "thorough", "Recognition mode did not persist.");
 }
 
 static async Task VerifyRunnerUsesSettingsAsync(string root)
@@ -70,7 +91,8 @@ static async Task VerifyRunnerUsesSettingsAsync(string root)
         Backend: "cpu",
         Language: "en",
         Threads: 3,
-        LibraryDirectory: Path.Combine(root, "library"));
+        LibraryDirectory: Path.Combine(root, "library"),
+        RecognitionMode: "balanced");
 
     var result = await runner.RunAsync(job);
     Assert(result.CompletedCount == 1, "Synthetic runner did not complete.");
@@ -79,6 +101,46 @@ static async Task VerifyRunnerUsesSettingsAsync(string root)
     Assert(backend.LastRequest.Language == "en", "Runner ignored job language.");
     Assert(backend.LastRequest.Threads == 3, "Runner ignored job thread count.");
     Assert(backend.LastRequest.Prompt == "prompt-x", "Runner ignored job prompt.");
+    Assert(backend.LastRequest.RecognitionMode == "balanced", "Runner ignored the job's recognition mode snapshot.");
+}
+
+static async Task VerifyBackendRecognitionModesAsync(string root)
+{
+    // Exercise the public client across the actual PowerShell process boundary.
+    // The fixture deliberately defaults to 'missing' to detect an omitted flag.
+    var backendRoot = Path.Combine(root, "backend-fixture");
+    Directory.CreateDirectory(backendRoot);
+    var input = Path.Combine(backendRoot, "input.wav");
+    await File.WriteAllTextAsync(input, string.Empty);
+    await File.WriteAllTextAsync(Path.Combine(backendRoot, "transcribe.ps1"), """
+        param($InputPath, $Backend, $Language, $Threads, $Prompt, $RecognitionMode = 'missing')
+        $event = @{
+            version = 1; type = 'result'; message = $RecognitionMode
+            resultDirectory = $PSScriptRoot
+            txtPath = (Join-Path $PSScriptRoot 'output.txt')
+            srtPath = (Join-Path $PSScriptRoot 'output.srt')
+            jsonPath = (Join-Path $PSScriptRoot 'output.json')
+        }
+        [Console]::Out.WriteLine('WHISPERMD_EVENT ' + ($event | ConvertTo-Json -Compress))
+        """);
+
+    var client = new WhisperBackendClient(backendRoot);
+    var defaultRun = await client.RunAsync(new BackendRunRequest(input));
+    Assert(defaultRun.ResultEvent.Message == "auto", "Client did not forward the default recognition mode.");
+    foreach (var mode in new[] { "standard", "balanced", "thorough" })
+    {
+        var run = await client.RunAsync(new BackendRunRequest(input, RecognitionMode: mode));
+        Assert(run.ResultEvent.Message == mode, $"Client did not forward recognition mode '{mode}'.");
+    }
+
+    try
+    {
+        await client.RunAsync(new BackendRunRequest(input, RecognitionMode: "invalid"));
+        throw new InvalidOperationException("Client accepted an invalid recognition mode.");
+    }
+    catch (ArgumentException ex) when (ex.ParamName == "RecognitionMode")
+    {
+    }
 }
 
 static async Task VerifyLibraryRoutingAsync(string root)
